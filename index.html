@@ -1,0 +1,147 @@
+<html>
+		<head>
+			<script type="text/javascript" src="http://backbonejs.org/test/vendor/jquery.js"></script>
+			<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+		</head>
+		<body>
+			<div id="start">
+				<button id="new-game">New Game</button>
+			</div>
+			<div id="buttons">
+			</div>
+		</body>
+		<script type="text/javascript">
+			$(function() {
+				var socket = io.connect("http://localhost:3000");
+				var waitServer = false;
+
+				var $buttons = $('#buttons'),
+					width = height = 20,
+					contents = {
+						0: {
+							class: 'red',
+							symbol: 'x',
+						},
+						1: {
+							class: 'blue',
+							symbol: 'o',
+						}
+					},
+					activeIndex = 0,
+					underQuestion = 'under-question',
+					yellow = 'yellow';
+						
+				for(var col = 0; col < width; col++) {
+					for(var row = 0; row < height; row++){
+						$buttons.append($('<button></button>').data('x', col).data('y', row));		
+					}
+				}
+
+				$('#new-game').click(function() {
+					$.each($('#buttons button'), function(index, button) {
+						button.textContent = "";
+						$(button).removeClass(yellow).removeClass(underQuestion).removeClass('red').removeClass('blue');
+					});
+					
+					waitServer = false;
+					activeIndex = 0;
+					socket.emit('start');
+				})
+
+				$('#buttons button').hover(function() {
+					var $this = $(this);
+					if($this.text() != "") return;
+					$this.addClass(underQuestion);
+					$this.addClass(contents[activeIndex].class);
+					$this.text(contents[activeIndex].symbol);
+				}, function() {
+					var $this = $(this);
+					if(!$this.hasClass(underQuestion)) return;
+					$this.text("");
+					$this.removeClass(underQuestion).removeClass(contents[activeIndex].class);
+				});
+
+				$('#buttons button').click(function() {
+					if(waitServer) return;
+
+					var $this = $(this);
+					if(!$this.hasClass(underQuestion)) return;
+					$this.removeClass(underQuestion);
+
+					waitServer = true;
+					socket.emit('set', {
+						index: activeIndex,
+						x: $this.data('x'),
+						y: $this.data('y'),
+					});
+				});
+
+				socket.on('next', function(data) {
+					waitServer = false;
+					activeIndex = (activeIndex + 1) % 2;
+				});
+
+				socket.on('error', function(data) {
+					alert(data.message);
+				});
+
+				socket.on('success', function(data) {
+					var $buttons = $('#buttons button');
+					var startX = Math.min(data.first.x, data.last.x),
+						startY = Math.min(data.first.y, data.last.y),
+						endX = Math.max(data.first.x, data.last.x),
+						endY = Math.max(data.first.y, data.last.y);
+					
+					while(startX < endX || startY < endY) {
+							$($buttons[startY * width + startX]).addClass(yellow);
+							if(startX < endX) ++startX;
+							if(startY < endY) ++startY;
+					}
+					$($buttons[startY * width + startX]).addClass(yellow);
+
+					alert("Player '" + contents[data.index].symbol +"' won!");
+				});
+			});
+		</script>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				font-size: 36px;
+				font-weight: bold;
+			}
+
+			#buttons {
+				width: 880px;
+			}
+
+			#buttons button {
+				display: block;
+				float: left;
+				width: 40px;
+				height: 40px;
+				margin: 2px;
+				cursor: pointer;
+			}
+
+			.red {
+				color: red;
+			}
+
+			.blue {
+				color: blue;
+			}
+
+			.yellow {
+				background-color: yellow;
+			}
+
+			.under-question.red {
+				color:#F58989; 
+			}
+
+			.under-question.blue {
+				color:#9789F5;
+			}
+		</style>
+</html>
