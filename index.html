@@ -12,7 +12,7 @@
 		</body>
 		<script type="text/javascript">
 			$(function() {
-				var socket = io.connect("http://localhost:3000");
+				var socket = io.connect("http://localhost:3001");
 				var waitServer = false;
 
 				var $buttons = $('#buttons'),
@@ -87,15 +87,29 @@
 
 				socket.on('success', function(data) {
 					var $buttons = $('#buttons button');
-					var startX = Math.min(data.first.x, data.last.x),
-						startY = Math.min(data.first.y, data.last.y),
-						endX = Math.max(data.first.x, data.last.x),
-						endY = Math.max(data.first.y, data.last.y);
+					var startX = data.first.x,
+						startY = data.first.y,
+						endX = data.last.x,
+						endY = data.last.y,
+						deltaX = -1,
+						deltaY = -1;
+
+					if (startX === endX) {
+						deltaX = 0;
+					} else if(startX < endX) {
+						deltaX = 1;
+					}
+
+					if(startY === endY) {
+						deltaY = 0;
+					} else if(startY < endY) {
+						deltaY = 1;
+					}
 					
-					while(startX < endX || startY < endY) {
+					while(startX != endX || startY != endY) {
 							$($buttons[startY * width + startX]).addClass(yellow);
-							if(startX < endX) ++startX;
-							if(startY < endY) ++startY;
+							startX += deltaX;
+							startY += deltaY;
 					}
 					$($buttons[startY * width + startX]).addClass(yellow);
 

@@ -1,4 +1,4 @@
-var http = require('http'),
+var http = require('http') ,
 	fs = require('fs'),
 	io = require('socket.io');
 
@@ -9,7 +9,7 @@ var server = new http.Server(function(req, res) {
 		res.statusCode = 200;
 		res.end(content);
 	})
-}).listen(3000);
+}).listen(3001);
 
 io = io.listen(server);
 io.sockets.on("connection", function(socket) {
