@@ -13,6 +13,13 @@ var server = new http.Server(function(req, res) {
 
 io = io.listen(server);
 io.sockets.on("connection", function(socket) {
+	var lastInd, table;
+	function start() {
+		table = new Array;
+		for(i = 0; i < height; i++) table.push(new Array(width));
+		lastInd = 1;
+	}
+
 	start();
 
 	socket.on('start', function(data) {
@@ -39,7 +46,7 @@ io.sockets.on("connection", function(socket) {
 		}
 
 		lastInd = table[x][y] = ind;
-		sFiveResult = searchFive(ind);
+		sFiveResult = searchFive(ind, table);
 		if(sFiveResult) {
 			sFiveResult.index = ind;
 			socket.emit("success", sFiveResult);
@@ -51,17 +58,15 @@ io.sockets.on("connection", function(socket) {
 
 
 /* functions */
-var table,
-	height = 20,
-	width = 20,
-	lastInd,
-	sFiveResult;
+var	height = 20,
+	width = 20;
 
-function searchFive(player) {
+function searchFive(player, table) {
 	var first = {x: 0, y:0},
 		last = {x: 0, y: 0},
 		count = 0,
-		i, j;
+		i, j,
+		sFiveResult;
 	
 	//search by line
 	for(row = 0; row < width; row++) {
@@ -183,10 +188,3 @@ function searchFive(player) {
 
 	return null;
 }
-
-function start() {
-	table = new Array;
-	for(i = 0; i < height; i++) table.push(new Array(width));
-	lastInd = 1;
-}
-
